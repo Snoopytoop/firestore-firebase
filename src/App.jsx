@@ -1,7 +1,17 @@
 import React from "react";
 import "./App.css";
 import { auth, db } from "./firebase/Init";
-import { collection, addDoc, getDocs, getDoc, doc, query, where } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  getDocs,
+  getDoc,
+  doc,
+  query,
+  where,
+  updateDoc,
+  deleteDoc,
+} from "firebase/firestore";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -13,25 +23,53 @@ function App() {
   const [user, setUser] = React.useState({});
   const [loading, setLoading] = React.useState(true);
 
+  async function updatePost() {
+    const hardCodedID = "9yeG68A8u50E7cEUVP5G";
+    const docRef = doc(db, "posts", hardCodedID);
+    const post = await getPostById(hardCodedID)
+    console.log(post)
+    const newPost = {
+      ...post,
+      title: "Land a 400k job"
+    }
+    console.log(newPost)
+    updateDoc(docRef, newPost)
+  }
+
+  function deletePost() {
+    const hardCodedID = "9yeG68A8u50E7cEUVP5G";
+    const docRef = doc(db, "posts", hardCodedID);
+    deleteDoc(docRef)
+  }
+
   function createPost() {
-    const post = { title: "Land a 100k job", description: "Finish FE", uid: user.uid };
-    addDoc(collection(db, "posts"), post)
+    const post = {
+      title: "Finish react section",
+      description: "Do react",
+      uid: user.uid,
+    };
+    addDoc(collection(db, "posts"), post);
   }
 
   async function getAllPosts() {
     const { docs } = await getDocs(collection(db, "posts"));
-    const posts = docs.map(elem => ({...elem.data(), id: elem.id}))
-    console.log(posts)
+    const posts = docs.map((elem) => ({ ...elem.data(), id: elem.id }));
+    console.log(posts);
   }
 
-  async function getPostById() {
-    const hardCodedID = "9yeG68A8u50E7cEUVP5G"
-    const docRef = doc(db, "posts", hardCodedID)
-    const docSnap = await getDoc(docRef)
-    if (docSnap.exists()) {
-      const post = docSnap.data()
-      console.log(post)
-    }
+  async function getPostById(id) {
+    const docRef = doc(db, "posts", id);
+    const docSnap = await getDoc(docRef);
+    return docSnap.data()
+  }
+
+  async function getPostByUID() {
+    const postCollectionRef = await query(
+      collection(db, "posts"),
+      where("uid", "==", user.uid)
+    )
+    const { docs } = await getDocs(postCollectionRef)
+    console.log(docs.map(doc => doc.data()))
   }
 
   React.useEffect(() => {
@@ -79,6 +117,9 @@ function App() {
       <button onClick={createPost}>Create post</button>
       <button onClick={getAllPosts}>Get all posts</button>
       <button onClick={getPostById}>Get post by ID</button>
+      <button onClick={getPostByUID}>Get post by user ID</button>
+      <button onClick={updatePost}>Update Post</button>
+      <button onClick={deletePost}>Delete Post</button>
     </div>
   );
 }
